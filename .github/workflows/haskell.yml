@@ -1,79 +1,117 @@
-name: build
+name: Build
 on:
-  push:
-    branches: [main, master]
+  workflow_dispatch:
   pull_request:
-    branches: [main, master]
-
-permissions:
-  contents: read
-
+    types:
+      - synchronize
+      - opened
+      - reopened
+  merge_group:
+  push:
+    branches:
+      - main
+  schedule:
+    # Run once per day (at UTC 18:00) to maintain cache:
+    - cron: 0 18 * * *
 jobs:
   build:
-    name: GHC ${{ matrix.ghc-version }} on ${{ matrix.os }}
+    name: ${{ matrix.os }}-ghc-${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
+    env:
+      cabal-build-dir: b
     strategy:
-      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        ghc-version: ['9.8, '9.6', '9.4']
-
-        include:
-          - os: windows-latest
-            ghc-version: '9.8'
-          - os: macos-latest
-            ghc-version: '9.8'
-
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+        cabal:
+          - 3.8.1.0
+        ghc:
+          - 8.10.7
+          - 9.0.2
+          - 9.2.8
+          - 9.4.5
+          - 9.6.2
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: Set up GHC ${{ matrix.ghc-version }}
-        uses: haskell-actions/setup@v2
-        id: setup
+      - name: Environment
+        uses: haskell/actions/setup@v2
+        id: setup-haskell-cabal
         with:
-          ghc-version: ${{ matrix.ghc-version }}
-          # Defaults, added for clarity:
-          cabal-version: 'latest'
-          cabal-update: true
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
 
-      - name: Configure the build
-        run: |
-          cabal configure --enable-tests --enable-benchmarks --disable-documentation
-          cabal build --dry-run
-        # The last step generates dist-newstyle/cache/plan.json for the cache key.
-
-      - name: Restore cached dependencies
-        uses: actions/cache/restore@v3
-        id: cache
+      - name: Configure
+        run: >
+          cabal configure
+          --builddir=${{ env.cabal-build-dir }}
+          --enable-tests
+          --enable-benchmarks
+          --enable-documentation
+          --test-show-details=direct
+          --write-ghc-environment-files=always
+      - name: Freeze
+        run: >
+          cabal freeze
+          --builddir=${{ env.cabal-build-dir }}
+      - name: Cache
+        uses: actions/cache@v3
         env:
-          key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-cabal-${{ steps.setup.outputs.cabal-version }}
+          hash: ${{ hashFiles('cabal.project.freeze') }}
         with:
-          path: ${{ steps.setup.outputs.cabal-store }}
-          key: ${{ env.key }}-plan-${{ hashFiles('**/plan.json') }}
-          restore-keys: ${{ env.key }}-
-
-      - name: Install dependencies
-        # If we had an exact cache hit, the dependencies will be up to date.
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: cabal build all --only-dependencies
-
-      # Cache dependencies already here, so that we do not have to rebuild them should the subsequent steps fail.
-      - name: Save cached dependencies
-        uses: actions/cache/save@v3
-        # If we had an exact cache hit, trying to save the cache would error because of key clash.
-        if: steps.cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ steps.setup.outputs.cabal-store }}
-          key: ${{ steps.cache.outputs.cache-primary-key }}
-
+          key: ${{ matrix.os }}-ghc-${{ matrix.ghc }}-${{ env.hash }}
+          restore-keys: |
+            ${{ matrix.os }}-ghc-${{ matrix.ghc }}-
+          path: |
+            ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+            ${{ env.cabal-build-dir }}
+      - name: Dependencies
+        run: >
+          cabal build all
+          --builddir=${{ env.cabal-build-dir }}
+          --only-dependencies
       - name: Build
-        run: cabal build all
-
-      - name: Run tests
-        run: cabal test all
-
-      - name: Check cabal file
-        run: cabal check
-
-      - name: Build documentation
-        run: cabal haddock all
+        run: >
+          cabal build all
+          --builddir=${{ env.cabal-build-dir }}
+          --enable-tests
+          --enable-benchmarks
+          --ghc-options=-Werror
+          --ghc-options=-Wall
+      - name: Test
+        run: >
+          cabal test all
+          --builddir=${{ env.cabal-build-dir }}
+      - name: Benchmark
+        run: >
+          cabal bench all
+          --builddir=${{ env.cabal-build-dir }}
+          || true
+      - name: Documentation (Generation)
+        run: >
+          cabal haddock all
+          --builddir=${{ env.cabal-build-dir }}
+          --enable-documentation
+          --haddock-hyperlink-source
+          --haddock-html-location
+          'https://hackage.haskell.org/package/$pkg-$version/docs'
+      - name: Documentation (Staging)
+        if: |
+            github.ref == 'refs/heads/main'
+            && matrix.os == 'ubuntu-latest'
+            && matrix.ghc == '9.6.2'
+        run: >
+          mv ${{ env.cabal-build-dir }}/build/*/*/*/doc/html/* gh-pages
+          touch gh-pages/.nojekyll
+      - name: Documentation (Deployment)
+        if: |
+            github.ref == 'refs/heads/main'
+            && matrix.os == 'ubuntu-latest'
+            && matrix.ghc == '9.6.2'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: gh-pages
