@@ -10,7 +10,12 @@ copyright:          Paolo Veronelli
 category:           Database
 extra-source-files: CHANGELOG.md
 
+common options
+  ghc-options:
+    -Wall -Werror -Wcompat -Wincomplete-uni-patterns
+
 library
+  import: options
   exposed-modules:  Data.CSV.SOP
   build-depends:
     , base
@@ -21,10 +26,12 @@ library
     , profunctors
     , time
 
+
   hs-source-dirs:   src
   default-language: Haskell2010
 
 test-suite generics-csv-test
+  import: options
   default-language: Haskell2010
   type:             exitcode-stdio-1.0
 
