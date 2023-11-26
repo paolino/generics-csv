@@ -1,21 +1,25 @@
-cabal-version:      3.6
-name:               generics-csv
-version:            0.1.0.0
-synopsis:           Generics SOP-based CSV instances
-description:        Please see README.md
-license:            Apache-2.0
-author:             paolo
-maintainer:         paolo.veronelli@gmail.com
-copyright:          Paolo Veronelli
-category:           Database
-extra-source-files: CHANGELOG.md
+cabal-version:   3.6
+name:            generics-csv
+version:         0.1.0.0
+synopsis:        Generics SOP-based CSV instances
+description:     Please see README.md
+license:         Apache-2.0
+author:          paolo
+maintainer:      paolo.veronelli@gmail.com
+copyright:       Paolo Veronelli
+category:        Database
+homepage:        https://github.com/paolino/generics-csv
+extra-doc-files:
+  CHANGELOG.md
+  README.md
 
 common options
   ghc-options:
-    -Wall -Werror -Wcompat -Wincomplete-uni-patterns
+    -Wall -Werror -Wcompat -Wredundant-constraints
+    -Wincomplete-record-updates -O2
 
 library
-  import: options
+  import:           options
   exposed-modules:  Data.CSV.SOP
   build-depends:
     , base
@@ -26,16 +30,13 @@ library
     , profunctors
     , time
 
-
   hs-source-dirs:   src
   default-language: Haskell2010
 
 test-suite generics-csv-test
-  import: options
+  import:           options
   default-language: Haskell2010
   type:             exitcode-stdio-1.0
-
-  -- Directories containing source files.
   hs-source-dirs:   tests
   main-is:          Example.hs
   build-depends:
