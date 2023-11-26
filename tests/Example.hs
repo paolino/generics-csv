@@ -26,7 +26,6 @@ import Generics.SOP.TH (deriveGeneric)
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Time as Time
-import qualified Data.Time.Calendar as Time
 
 newtype Title = Title ByteString
     deriving newtype (Show, Eq, FromField, ToField)

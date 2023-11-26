@@ -1,4 +1,3 @@
-
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
@@ -6,6 +5,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Data.CSV.SOP
     ( Column (..)
@@ -30,7 +30,6 @@ import Data.Csv
     )
 import Data.Functor.Contravariant (Contravariant (..))
 import Data.Functor.Invariant (Invariant (..))
-import Data.Time (parseTimeM)
 import Generics.SOP
     ( I (..)
     , IsProductType
@@ -45,12 +44,8 @@ import Generics.SOP.NP
     ( collapse_NP
     , map_NP
     , sequence_NP
-    , trans_NP
     , zipWith_NP
     )
-
-import qualified Data.ByteString.Char8 as B
-import qualified Data.Time as Time
 
 -- | A render to 'Field'
 newtype R a = R {unR :: a -> Field}
