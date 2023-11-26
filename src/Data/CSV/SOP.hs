@@ -86,7 +86,7 @@ class IsProductType a (ProductCode a) => GenericsCSV a where
     codec :: Proxy a -> NP Column (ProductCode a)
 
 instance GenericsCSV a => FromNamedRecord a where
-    parseNamedRecord :: GenericsCSV a => NamedRecord -> Parser a
+    parseNamedRecord :: NamedRecord -> Parser a
     parseNamedRecord r =
         let
             np = codec (Proxy @a)
@@ -94,7 +94,7 @@ instance GenericsCSV a => FromNamedRecord a where
             productTypeTo <$> sequence_NP (map_NP (getParser r) np)
 
 instance GenericsCSV a => ToNamedRecord a where
-    toNamedRecord :: GenericsCSV a => a -> NamedRecord
+    toNamedRecord :: a -> NamedRecord
     toNamedRecord x =
         let
             np = codec (Proxy @a)
