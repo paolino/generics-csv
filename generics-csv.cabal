@@ -1,43 +1,25 @@
-cabal-version:      2.4
+cabal-version:      3.6
 name:               generics-csv
 version:            0.1.0.0
-
--- A short (one-line) description of the package.
--- synopsis:
-
--- A longer description of the package.
--- description:
-
--- A URL where users can report bugs.
--- bug-reports:
-
--- The license under which the package is released.
--- license:
+synopsis:           Generics SOP-based CSV instances
+description:        Please see README.md
+license:            Apache-2.0
 author:             paolo
 maintainer:         paolo.veronelli@gmail.com
-
--- A copyright notice.
--- copyright:
--- category:
+copyright:          Paolo Veronelli
+category:           Database
 extra-source-files: CHANGELOG.md
 
 library
-  exposed-modules:
-    Data.CSV.SOP
-
-  -- Modules included in this library but not exported.
-  -- other-modules:
-
-  -- LANGUAGE extensions used by modules in this package.
-  -- other-extensions:
+  exposed-modules:  Data.CSV.SOP
   build-depends:
     , base
+    , bytestring
     , cassava
     , generics-sop
-    , bytestring
-    , time
     , invariant
     , profunctors
+    , time
 
   hs-source-dirs:   src
   default-language: Haskell2010
@@ -47,15 +29,14 @@ test-suite generics-csv-test
   type:             exitcode-stdio-1.0
 
   -- Directories containing source files.
-  hs-source-dirs:
-    tests
+  hs-source-dirs:   tests
   main-is:          Example.hs
   build-depends:
     , base
-    , cassava
-    , generics-sop
     , bytestring
-    , time
+    , cassava
+    , generics-csv
+    , generics-sop
     , invariant
     , profunctors
-    , generics-csv
+    , time
